@@ -4,6 +4,7 @@ export default defineNuxtConfig({
     '@nuxt/ui'
   ],
   app: {
-    baseURL: '/irt'
+    baseURL: '/irt',
+    cdnURL: '/irt/'
   }
 })
