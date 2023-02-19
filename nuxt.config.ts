@@ -15,7 +15,7 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
       ],
       link: [
-        { rel: "shortcut icon", type: "image/png", href: `/${subPathName}/icon/favicon.png` },
+        { rel: "shortcut icon", type: "image/x-icon", href: `/${subPathName}/favicon.ico` },
       ]
     }
   }
