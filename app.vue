@@ -20,8 +20,8 @@
       <p>
         {{ msg1 }}
       </p>
-      <NButton class="uploadButton" for="fileInput">
-        {{ msg2 }}
+      <NButton v-if="!isDragging" class="uploadButton" for="fileInput">
+        ここをクリックして選択
         <input
           id="fileInput"
           class="uploadButtonInput"
@@ -71,13 +71,9 @@ const renaming = ref<Boolean>(false);
 const isError = ref<Boolean>(false);
 
 const msg1 = computed<String>(() => {
-  return isDragging.value ? "ドラッグ中" : "ここにファイルをドロップ。または";
-});
-
-const msg2 = computed<String>(() => {
   return isDragging.value
     ? "ここにドロップしてください"
-    : "ここをクリックして選択";
+    : "ここにファイルをドロップ。または";
 });
 
 type FileInfo = {
