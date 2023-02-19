@@ -1,10 +1,23 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+// github pages でホスティングするために サブ Path を設定する
+const subPathName = 'irt'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui'
   ],
   app: {
-    baseURL: '/irt',
-    cdnURL: '/irt/'
+    baseURL: `/${subPathName}`,
+    cdnURL: `/${subPathName}/`,
+    head: {
+      title: 'irt',
+      meta: [
+        { charset: 'utf-8' },
+      ],
+      link: [
+        { rel: "icon", type: "image/x-icon", href: `/${subPathName}/favicon.ico` },
+      ]
+    }
   }
 })
