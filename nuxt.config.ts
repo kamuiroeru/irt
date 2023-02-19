@@ -9,7 +9,6 @@ export default defineNuxtConfig({
   ],
   app: {
     baseURL: `/${subPathName}`,
-    cdnURL: `/${subPathName}/`,
     head: {
       title: 'irt',
       meta: [
