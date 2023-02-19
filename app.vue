@@ -1,5 +1,128 @@
 <template>
-  <div>
-    <NButton n="red">HOGE</NButton>
+  <div class="relative p-10 n-bg-base">
+    <div class="flex justify-between items-center">
+      <div class="text-2xl">ファイル名変更</div>
+    </div>
+    <NTip class="my-4">
+      写真の撮影時刻をファイル名の先頭に付け加えます。 <br />
+      例: 2022年12月23日 12時23分45秒に撮影した 「浜辺.jpg」 ->
+      「20221223-122345__浜辺.jpg」
+    </NTip>
+    <Loading v-if="renaming" />
+    <NCard
+      v-else
+      class="p-10 text-center"
+      :class="isDragging ? 'border-orange' : ''"
+      @dragleave.prevent="isDragging = false"
+      @dragover.prevent="isDragging = true"
+      @drop.prevent="onDrop"
+    >
+      <p>
+        {{ msg1 }}
+      </p>
+      <NButton class="n-button" for="fileInput" style="overflow: hidden">
+        {{ msg2 }}
+        <input
+          id="fileInput"
+          class="uploadButtonInput"
+          type="file"
+          multiple
+          @change="onDrop"
+        />
+      </NButton>
+    </NCard>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.uploadButtonInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+</style>
+
+<script setup lang="ts">
+// import { getImageInfo } from "@/modules/exif";
+import { dateTextForFileName } from "@/modules/dateStrUtils";
+import ExifReader from "exifreader";
+import JSZip from "jszip";
+import FileSaver from "file-saver";
+
+const isDragging = ref<Boolean>(false);
+const renaming = ref<Boolean>(false);
+
+const msg1 = computed<String>(() => {
+  return isDragging.value ? "ドラッグ中" : "ここにファイルをドロップ。または";
+});
+
+const msg2 = computed<String>(() => {
+  return isDragging.value
+    ? "ここにドロップしてください"
+    : "ここをクリックして選択";
+});
+
+type FileInfo = {
+  name: string;
+  blob: ArrayBuffer;
+};
+
+const onDrop = (event: Event) => {
+  isDragging.value = false;
+  renaming.value = true;
+  // @ts-ignore
+  const fileList: File[] = event.target.files
+    ? event.target.files
+    : event.dataTransfer.files;
+
+  let fileCount = 0;
+  const fileToNewFilename: { [key: string]: FileInfo } = {};
+
+  for (const f of fileList) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const ab = reader.result as ArrayBuffer;
+      const tags = await ExifReader.load(ab);
+      const dateTimeOriginal = tags.DateTimeOriginal?.description;
+      if (dateTimeOriginal !== undefined) {
+        const prefix = dateTextForFileName(dateTimeOriginal);
+        fileToNewFilename[f.name] = {
+          name: `${prefix}__${f.name}`,
+          blob: ab,
+        };
+      }
+    };
+    reader.readAsArrayBuffer(f);
+  }
+
+  // すべて読み込んだか 0.5 秒ごとにチェック
+  const checkProcess = setInterval(() => {
+    const newCount = Object.keys(fileToNewFilename).length;
+    if (fileCount !== newCount) {
+      fileCount = newCount;
+      console.log(fileToNewFilename);
+    } else {
+      const zip = new JSZip();
+      for (const key of Object.keys(fileToNewFilename)) {
+        const value = fileToNewFilename[key];
+        zip.file(value.name, value.blob, {
+          binary: true,
+        });
+      }
+      zip
+        .generateAsync({
+          type: "blob",
+        })
+        .then((content) => {
+          FileSaver.saveAs(content, "irt-download.zip");
+          renaming.value = false;
+        });
+      clearInterval(checkProcess);
+    }
+  }, 500);
+};
+</script>
