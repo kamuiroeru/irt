@@ -1,5 +1,5 @@
 <template>
   <div>
-    <NuxtWelcome />
+    <NButton n="red">HOGE</NButton>
   </div>
 </template>
