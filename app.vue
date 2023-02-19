@@ -20,7 +20,7 @@
       <p>
         {{ msg1 }}
       </p>
-      <NButton class="n-button" for="fileInput" style="overflow: hidden">
+      <NButton class="uploadButton" for="fileInput">
         {{ msg2 }}
         <input
           id="fileInput"
@@ -31,10 +31,24 @@
         />
       </NButton>
     </NCard>
+    <NTip
+      v-if="isError"
+      class="mt-4"
+      n="red6 dark:red5"
+      icon="carbon:warning-alt"
+    >
+      エラーが発生しました。やり直してください。
+    </NTip>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.uploadButton {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+
 .uploadButtonInput {
   position: absolute;
   top: 0;
@@ -47,7 +61,6 @@
 </style>
 
 <script setup lang="ts">
-// import { getImageInfo } from "@/modules/exif";
 import { dateTextForFileName } from "@/modules/dateStrUtils";
 import ExifReader from "exifreader";
 import JSZip from "jszip";
@@ -55,6 +68,7 @@ import FileSaver from "file-saver";
 
 const isDragging = ref<Boolean>(false);
 const renaming = ref<Boolean>(false);
+const isError = ref<Boolean>(false);
 
 const msg1 = computed<String>(() => {
   return isDragging.value ? "ドラッグ中" : "ここにファイルをドロップ。または";
@@ -72,12 +86,20 @@ type FileInfo = {
 };
 
 const onDrop = (event: Event) => {
+  isError.value = false;
   isDragging.value = false;
   renaming.value = true;
   // @ts-ignore
   const fileList: File[] = event.target.files
     ? event.target.files
     : event.dataTransfer.files;
+
+  if (fileList.length === 0) {
+    isDragging.value = false;
+    renaming.value = false;
+    isError.value = true;
+    return;
+  }
 
   let fileCount = 0;
   const fileToNewFilename: { [key: string]: FileInfo } = {};
