@@ -9,11 +9,7 @@
   },
   "devDependencies": {
     "@nuxt/ui": "^0.4.1",
-    "@types/exif": "^0.6.3",
-    "@types/exif-reader": "^1.0.0",
     "@types/file-saver": "^2.0.5",
-    "exif": "^0.6.0",
-    "exif-reader": "^1.1.0",
     "nuxt": "^3.2.2",
     "sass": "^1.58.3"
   },
