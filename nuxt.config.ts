@@ -2,5 +2,8 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui'
-  ]
+  ],
+  app: {
+    baseURL: '/irt/'
+  }
 })
