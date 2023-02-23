@@ -121,12 +121,18 @@ const onDrop = (event: Event) => {
       console.log(fileToNewFilename);
     } else {
       const zip = new JSZip();
+      // rename all
+      const skippedFiles: string[] = []
       for (const key of Object.keys(fileToNewFilename)) {
         const value = fileToNewFilename[key];
+        if (key === value.name) {
+          skippedFiles.push(key)
+        }
         zip.file(value.name, value.blob, {
           binary: true,
         });
       }
+      zip.file('_skipped_files.txt', skippedFiles.join("\n"))
       zip
         .generateAsync({
           type: "blob",
