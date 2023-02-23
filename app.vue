@@ -61,8 +61,7 @@
 </style>
 
 <script setup lang="ts">
-import { dateTextForFileName } from "@/modules/dateStrUtils";
-import ExifReader from "exifreader";
+import { getCreatedDateTimeFromExif } from "@/modules/exifProcessor";
 import JSZip from "jszip";
 import FileSaver from "file-saver";
 
@@ -104,15 +103,12 @@ const onDrop = (event: Event) => {
     const reader = new FileReader();
     reader.onload = async () => {
       const ab = reader.result as ArrayBuffer;
-      const tags = await ExifReader.load(ab);
-      const dateTimeOriginal = tags.DateTimeOriginal?.description;
-      if (dateTimeOriginal !== undefined) {
-        const prefix = dateTextForFileName(dateTimeOriginal);
-        fileToNewFilename[f.name] = {
-          name: `${prefix}__${f.name}`,
-          blob: ab,
-        };
-      }
+      const dateTime = getCreatedDateTimeFromExif(ab);
+      const prefix = dateTime.length === 0 ? "" : `${dateTime}__`;
+      fileToNewFilename[f.name] = {
+        name: prefix + f.name,
+        blob: ab,
+      };
     };
     reader.readAsArrayBuffer(f);
   }
@@ -125,12 +121,18 @@ const onDrop = (event: Event) => {
       console.log(fileToNewFilename);
     } else {
       const zip = new JSZip();
+      // rename all
+      const skippedFiles: string[] = []
       for (const key of Object.keys(fileToNewFilename)) {
         const value = fileToNewFilename[key];
+        if (key === value.name) {
+          skippedFiles.push(key)
+        }
         zip.file(value.name, value.blob, {
           binary: true,
         });
       }
+      zip.file('_skipped_files.txt', skippedFiles.join("\n"))
       zip
         .generateAsync({
           type: "blob",
