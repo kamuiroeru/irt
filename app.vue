@@ -166,6 +166,7 @@ const onDrop = (event: Event) => {
         .generateAsync(
           {
             type: "blob",
+            compression: "STORE",  // no compression
           },
           (metadata) => {
             zippingPercentage.value = metadata.percent;
