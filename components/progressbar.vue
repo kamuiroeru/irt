@@ -20,9 +20,9 @@
 <script setup lang="ts">
 type PropType = {
   label: string;
-  fileCountAll: number;
-  processedFileCount: number;
-  directPercentage: number;
+  fileCountAll?: number;
+  processedFileCount?: number;
+  directPercentage?: number;
 };
 const props = withDefaults(defineProps<PropType>(), {
   label: "処理中...",
