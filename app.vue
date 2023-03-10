@@ -8,7 +8,20 @@
       例: 2022年12月23日 12時23分45秒に撮影した 「浜辺.jpg」 ->
       「20221223-122345__浜辺.jpg」
     </NTip>
-    <Loading v-if="renaming" />
+    <div v-if="renaming">
+      <Loading />
+      <Progressbar
+        v-if="obtainingExif"
+        label="撮影時刻取得中..."
+        :file-count-all="allFileCount"
+        :processed-file-count="fileCountProcessed"
+      />
+      <Progressbar
+        v-if="zipping"
+        label="Zip 圧縮中..."
+        :direct-percentage="zippingPercentage"
+      />
+    </div>
     <NCard
       v-else
       class="p-10 text-center"
@@ -39,6 +52,7 @@
     >
       エラーが発生しました。やり直してください。
     </NTip>
+    <Snackbar v-model="showSnackbar" label="処理完了" />
   </div>
 </template>
 
@@ -67,7 +81,14 @@ import FileSaver from "file-saver";
 
 const isDragging = ref<Boolean>(false);
 const renaming = ref<Boolean>(false);
+const obtainingExif = ref<Boolean>(false);
+const zipping = ref<Boolean>(false);
 const isError = ref<Boolean>(false);
+const showSnackbar = ref<Boolean>(false);
+
+const fileCountProcessed = ref<number>(1);
+const allFileCount = ref<number>(1);
+const zippingPercentage = ref<number>(0);
 
 const msg1 = computed<String>(() => {
   return isDragging.value
@@ -84,6 +105,7 @@ const onDrop = (event: Event) => {
   isError.value = false;
   isDragging.value = false;
   renaming.value = true;
+  obtainingExif.value = true;
   // @ts-ignore
   const fileList: File[] = event.target.files
     ? event.target.files
@@ -92,9 +114,13 @@ const onDrop = (event: Event) => {
   if (fileList.length === 0) {
     isDragging.value = false;
     renaming.value = false;
+    obtainingExif.value = false;
+    zipping.value = false;
     isError.value = true;
     return;
   }
+
+  allFileCount.value = fileList.length;
 
   let fileCount = 0;
   const fileToNewFilename: { [key: string]: FileInfo } = {};
@@ -109,6 +135,9 @@ const onDrop = (event: Event) => {
         name: prefix + f.name,
         blob: ab,
       };
+      if (fileCountProcessed.value < allFileCount.value) {
+        fileCountProcessed.value++;
+      }
     };
     reader.readAsArrayBuffer(f);
   }
@@ -120,26 +149,36 @@ const onDrop = (event: Event) => {
       fileCount = newCount;
       console.log(fileToNewFilename);
     } else {
+      obtainingExif.value = false;
+      zipping.value = true;
       const zip = new JSZip();
       // rename all
-      const skippedFiles: string[] = []
+      const skippedFiles: string[] = [];
       for (const key of Object.keys(fileToNewFilename)) {
         const value = fileToNewFilename[key];
         if (key === value.name) {
-          skippedFiles.push(key)
+          skippedFiles.push(key);
         }
         zip.file(value.name, value.blob, {
           binary: true,
         });
       }
-      zip.file('_skipped_files.txt', skippedFiles.join("\n"))
+      zip.file("_skipped_files.txt", skippedFiles.join("\n"));
       zip
-        .generateAsync({
-          type: "blob",
-        })
+        .generateAsync(
+          {
+            type: "blob",
+            compression: "STORE", // no compression
+          },
+          (metadata) => {
+            zippingPercentage.value = metadata.percent;
+          }
+        )
         .then((content) => {
           FileSaver.saveAs(content, "irt-download.zip");
           renaming.value = false;
+          zipping.value = false;
+          showSnackbar.value = true;
         });
       clearInterval(checkProcess);
     }
