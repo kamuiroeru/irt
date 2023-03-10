@@ -12,10 +12,15 @@
       <Loading />
       <Progressbar
         v-if="obtainingExif"
+        label="撮影時刻取得中..."
         :file-count-all="allFileCount"
         :processed-file-count="fileCountProcessed"
       />
-      <p v-if="zipping" class="text-2xl text-center">Zip 圧縮中...</p>
+      <Progressbar
+        v-if="zipping"
+        label="Zip 圧縮中..."
+        :direct-percentage="zippingPercentage"
+      />
     </div>
     <NCard
       v-else
@@ -81,6 +86,7 @@ const isError = ref<Boolean>(false);
 
 const fileCountProcessed = ref<number>(1);
 const allFileCount = ref<number>(1);
+const zippingPercentage = ref<number>(0);
 
 const msg1 = computed<String>(() => {
   return isDragging.value
@@ -157,9 +163,14 @@ const onDrop = (event: Event) => {
       }
       zip.file("_skipped_files.txt", skippedFiles.join("\n"));
       zip
-        .generateAsync({
-          type: "blob",
-        })
+        .generateAsync(
+          {
+            type: "blob",
+          },
+          (metadata) => {
+            zippingPercentage.value = metadata.percent;
+          }
+        )
         .then((content) => {
           FileSaver.saveAs(content, "irt-download.zip");
           renaming.value = false;

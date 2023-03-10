@@ -9,26 +9,37 @@
       {{ percentageForDisplay }}
     </div>
   </div>
-  <div class="text-center">
-    <div class="text-2xl">
-      撮影時刻取得中... {{ processedFileCount }} / {{ fileCountAll }}
-    </div>
+  <div class="text-center text-2xl">
+    {{ props.label }}
+    <template v-if="!isDirectPercentage">
+      {{ processedFileCount }} / {{ fileCountAll }}
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 type PropType = {
+  label: string;
   fileCountAll: number;
   processedFileCount: number;
+  directPercentage: number;
 };
 const props = withDefaults(defineProps<PropType>(), {
+  label: "処理中...",
   fileCountAll: 100,
   processedFileCount: 1,
+  directPercentage: -1,
 });
 
-const percentage = computed<number>(
-  () => (props.processedFileCount / props.fileCountAll) * 100
-);
+const isDirectPercentage = computed<boolean>(() => props.directPercentage >= 0);
+
+const percentage = computed<number>(() => {
+  if (isDirectPercentage.value) {
+    return props.directPercentage;
+  } else {
+    return (props.processedFileCount / props.fileCountAll) * 100;
+  }
+});
 const percentageForDisplay = computed<string>(
   () => `${Math.floor(percentage.value)}%`
 );
