@@ -52,6 +52,7 @@
     >
       エラーが発生しました。やり直してください。
     </NTip>
+    <Snackbar v-model="showSnackbar" label="処理完了" />
   </div>
 </template>
 
@@ -83,6 +84,7 @@ const renaming = ref<Boolean>(false);
 const obtainingExif = ref<Boolean>(false);
 const zipping = ref<Boolean>(false);
 const isError = ref<Boolean>(false);
+const showSnackbar = ref<Boolean>(false);
 
 const fileCountProcessed = ref<number>(1);
 const allFileCount = ref<number>(1);
@@ -166,7 +168,7 @@ const onDrop = (event: Event) => {
         .generateAsync(
           {
             type: "blob",
-            compression: "STORE",  // no compression
+            compression: "STORE", // no compression
           },
           (metadata) => {
             zippingPercentage.value = metadata.percent;
@@ -176,6 +178,7 @@ const onDrop = (event: Event) => {
           FileSaver.saveAs(content, "irt-download.zip");
           renaming.value = false;
           zipping.value = false;
+          showSnackbar.value = true;
         });
       clearInterval(checkProcess);
     }
